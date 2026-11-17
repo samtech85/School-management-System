@@ -1,7 +1,12 @@
-const express = require("express");
-const auth = require("../middleware/authMiddleware");
-const controller = require("../controllers/gradingController");
-
+const express = require('express');
 const router = express.Router();
-router.get("/", auth, controller.listGrades);
+const gradingController = require('../controllers/gradingController');
+const { authenticateToken } = require('../middleware/authMiddleware');
+const { authorizeRoles } = require('../middleware/rbacMiddleware');
+
+router.use(authenticateToken);
+
+router.get('/rules', gradingController.getGradingRules);
+router.post('/rules', authorizeRoles(['Admin']), gradingController.upsertGradingRule);
+
 module.exports = router;

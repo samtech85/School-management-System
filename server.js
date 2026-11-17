@@ -1,47 +1,40 @@
-require("dotenv").config();
+const express = require('express');
+const path = require('path');
+require('dotenv').config();
 
-const path = require("path");
-const express = require("express");
-const helmet = require("helmet");
-const cors = require("cors");
-const { PORT } = require("./config/constants");
-const { pool } = require("./config/db");
-const errorMiddleware = require("./middleware/errorMiddleware");
+const { notFoundHandler, errorHandler } = require('./middleware/errorMiddleware');
+const authRoutes = require('./routes/authRoutes');
 
 const app = express();
+const PORT = process.env.PORT || 3000;
 
-app.use(helmet({ contentSecurityPolicy: false }));
-app.use(cors());
-app.use(express.json({ limit: "1mb" }));
-app.use(express.urlencoded({ extended: false }));
-app.use(express.static(path.join(__dirname, "public")));
+const academicRoutes = require('./routes/academicRoutes');
+app.use('/api/academics', academicRoutes);
 
-app.get("/api/health", async (req, res, next) => {
-  try {
-    await pool.query("SELECT 1");
-    res.json({ status: "ok", database: "connected" });
-  } catch (error) {
-    next(error);
-  }
+const enrollmentRoutes = require('./routes/enrollmentRoutes');
+app.use('/api/enrollments', enrollmentRoutes);
+
+const reportRoutes = require('./routes/reportRoutes');
+app.use('/api/reports', reportRoutes);
+
+const backupRoutes = require('./routes/backupRoutes');
+app.use('/api/backups', backupRoutes);
+
+// Middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Serve static frontend assets
+app.use(express.static(path.join(__dirname, 'public')));
+
+// API Routes
+app.use('/api/auth', authRoutes);
+
+// Catch-all 404 and Error Handler
+app.use(notFoundHandler);
+app.use(errorHandler);
+
+app.listen(PORT, () => {
+  console.log(`[Server] Running on port ${PORT} with currency HTG`);
 });
 
-app.use("/api/auth", require("./routes/authRoutes"));
-app.use("/api/users", require("./routes/userRoutes"));
-app.use("/api/academics", require("./routes/academicRoutes"));
-app.use("/api/enrollments", require("./routes/enrollmentRoutes"));
-app.use("/api/grades", require("./routes/gradingRoutes"));
-app.use("/api/students", require("./routes/studentRoutes"));
-app.use("/api/dashboard", require("./routes/dashboardRoutes"));
-app.use("/api/reports", require("./routes/reportRoutes"));
-app.use("/api/backups", require("./routes/backupRoutes"));
-
-app.use("/api", (req, res) => res.status(404).json({ error: "API endpoint not found." }));
-app.use(errorMiddleware);
-
-if (require.main === module) {
-  app.listen(PORT, () => {
-    console.log(`School Management System listening on http://localhost:${PORT}`);
-  });
-}
-
-module.exports = app;

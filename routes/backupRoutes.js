@@ -1,9 +1,11 @@
-const express = require("express");
-const auth = require("../middleware/authMiddleware");
-const requireRoles = require("../middleware/rbacMiddleware");
-const { ROLES } = require("../config/constants");
-const controller = require("../controllers/backupController");
-
+const express = require('express');
 const router = express.Router();
-router.get("/", auth, requireRoles(ROLES.ADMIN), controller.listBackups);
+const backupController = require('../controllers/backupController');
+const { authenticateToken } = require('../middleware/authMiddleware');
+const { authorizeRoles } = require('../middleware/rbacMiddleware');
+
+router.use(authenticateToken, authorizeRoles(['Admin']));
+
+router.get('/export', backupController.exportBackup);
+
 module.exports = router;

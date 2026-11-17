@@ -1,26 +1,35 @@
-(function () {
-  const TOKEN_KEY = "sms_token";
+const API_BASE = '/api';
 
-  async function request(url, options) {
-    const config = options || {};
-    const headers = new Headers(config.headers || {});
-    const token = localStorage.getItem(TOKEN_KEY);
-    if (token) headers.set("Authorization", `Bearer ${token}`);
-    if (config.body && !(config.body instanceof FormData)) {
-      headers.set("Content-Type", "application/json");
-    }
+async function apiRequest(endpoint, method = 'GET', data = null) {
+  const token = localStorage.getItem('sms_token');
+  const headers = {
+    'Content-Type': 'application/json'
+  };
 
-    const response = await fetch(url, { ...config, headers });
-    if (!response.ok) {
-      const payload = await response.json().catch(() => ({}));
-      throw new Error(payload.error || `Request failed (${response.status}).`);
-    }
-    return response.json();
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
   }
 
-  window.SMSApi = {
-    get: (url) => request(url),
-    post: (url, body) => request(url, { method: "POST", body: JSON.stringify(body) }),
-    tokenKey: TOKEN_KEY
+  const config = {
+    method,
+    headers
   };
-})();
+
+  if (data) {
+    config.body = JSON.stringify(data);
+  }
+
+  try {
+    const response = await fetch(`${API_BASE}${endpoint}`, config);
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.error || 'An error occurred during the request.');
+    }
+
+    return result;
+  } catch (err) {
+    console.error('[API Error]', err);
+    throw err;
+  }
+}

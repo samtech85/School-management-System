@@ -1,10 +1,7 @@
-INSERT INTO academic_years (name, starts_on, ends_on, is_current)
-VALUES ('2026-2027', DATE '2026-08-01', DATE '2027-07-31', TRUE)
-ON CONFLICT (name) DO NOTHING;
+DELETE FROM users WHERE username IN ('admin', 'teacher', 'student', 'accounting');
 
-INSERT INTO courses (course_code, course_name, description, credits)
-VALUES
-  ('MATH-101', 'Introduction to Mathematics', 'Foundational mathematical concepts.', 3),
-  ('ENG-101', 'English Language Arts', 'Reading, writing, and communication.', 3),
-  ('SCI-101', 'General Science', 'An introduction to scientific inquiry.', 3)
-ON CONFLICT (course_code) DO NOTHING;
+INSERT INTO users (username, first_name, last_name, email, phone, password_hash, role, status) VALUES
+('admin', 'Admin', 'User', 'admin@school.ht', '+50937000001', '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Admin', 'active'),
+('teacher', 'Jean', 'Teacher', 'teacher@school.ht', '+50937000002', '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Teacher', 'active'),
+('student', 'Marie', 'Student', 'student@school.ht', '+50937000003', '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Student', 'active'),
+('accounting', 'Pierre', 'Accounting', 'accounting@school.ht', '+50937000004', '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Accounting', 'active');

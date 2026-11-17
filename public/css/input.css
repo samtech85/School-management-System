@@ -4,6 +4,9 @@
 
 @layer base {
   body {
-    @apply bg-slate-50 text-slate-900 antialiased;
+    @apply bg-white text-darkgray font-sans antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply text-heading font-bold;
   }
 }

@@ -1,50 +1,107 @@
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-const { pool } = require("../config/db");
-const { ROLES } = require("../config/constants");
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const db = require('../config/db');
+const { sanitizeString } = require('../utils/validators');
+
+const JWT_SECRET = process.env.JWT_SECRET || 'supersecret_school_jwt_key_2026';
 
 async function register(req, res, next) {
-  const { first_name, last_name, email, password } = req.body;
   try {
-    const passwordHash = await bcrypt.hash(password, 12);
-    const result = await pool.query(
-      `INSERT INTO users (first_name, last_name, email, password_hash, role)
-       VALUES ($1, $2, $3, $4, $5)
-       RETURNING id, first_name, last_name, email, role`,
-      [first_name, last_name, email, passwordHash, ROLES.STUDENT]
-    );
-    return res.status(201).json({ user: result.rows[0] });
-  } catch (error) {
-    if (error.code === "23505") {
-      return res.status(409).json({ error: "An account with that email already exists." });
+    let { username, first_name, last_name, email, phone, password, role } = req.body;
+
+    username = sanitizeString(username).toLowerCase();
+    first_name = sanitizeString(first_name);
+    last_name = sanitizeString(last_name);
+    email = sanitizeString(email).toLowerCase();
+    phone = sanitizeString(phone);
+
+    if (!username || !first_name || !last_name || !password || !role) {
+      return res.status(400).json({ error: 'Missing required fields (username, first_name, last_name, password, role).' });
     }
-    return next(error);
+
+    const validRoles = ['Admin', 'Teacher', 'Student', 'Accounting'];
+    if (!validRoles.includes(role)) {
+      return res.status(400).json({ error: 'Invalid role specified.' });
+    }
+
+    const existing = await db.query('SELECT id FROM users WHERE username = $1', [username]);
+    if (existing.rows.length > 0) {
+      return res.status(409).json({ error: 'Username is already taken.' });
+    }
+
+    const saltRounds = 10;
+    const password_hash = await bcrypt.hash(password, saltRounds);
+
+    const queryText = `
+      INSERT INTO users (username, first_name, last_name, email, phone, password_hash, role, status)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending')
+      RETURNING id, username, first_name, last_name, role, status, created_at
+    `;
+    const values = [username, first_name, last_name, email || null, phone || null, password_hash, role];
+    const result = await db.query(queryText, values);
+
+    res.status(201).json({
+      message: 'Registration successful. Your account is pending Admin approval.',
+      user: result.rows[0]
+    });
+  } catch (err) {
+    next(err);
   }
 }
 
 async function login(req, res, next) {
-  const { email, password } = req.body;
   try {
-    const result = await pool.query(
-      "SELECT id, first_name, last_name, email, role, password_hash FROM users WHERE email = $1 AND is_active = TRUE",
-      [email]
-    );
+    let { username, password } = req.body;
+    username = sanitizeString(username).toLowerCase();
+
+    if (!username || !password) {
+      return res.status(400).json({ error: 'Username and password are required.' });
+    }
+
+    const result = await db.query('SELECT * FROM users WHERE username = $1', [username]);
+    if (result.rows.length === 0) {
+      return res.status(401).json({ error: 'Invalid username or password.' });
+    }
+
     const user = result.rows[0];
-    if (!user || !(await bcrypt.compare(password, user.password_hash))) {
-      return res.status(401).json({ error: "Invalid email or password." });
+
+    if (user.status === 'suspended') {
+      return res.status(403).json({ error: 'Your account has been suspended.' });
     }
-    if (!process.env.JWT_SECRET) {
-      throw new Error("JWT_SECRET is not configured.");
+
+    if (user.status === 'pending') {
+      return res.status(403).json({ error: 'Your account is pending Admin approval.' });
     }
-    const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN || "1d" }
-    );
-    delete user.password_hash;
-    return res.json({ token, user });
-  } catch (error) {
-    return next(error);
+
+    const isMatch = await bcrypt.compare(password, user.password_hash);
+    if (!isMatch) {
+      return res.status(401).json({ error: 'Invalid username or password.' });
+    }
+
+    const tokenPayload = {
+      id: user.id,
+      username: user.username,
+      role: user.role,
+      first_name: user.first_name,
+      last_name: user.last_name
+    };
+
+    const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: '8h' });
+
+    res.json({
+      message: 'Login successful',
+      token,
+      user: {
+        id: user.id,
+        username: user.username,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        role: user.role,
+        status: user.status
+      }
+    });
+  } catch (err) {
+    next(err);
   }
 }
 

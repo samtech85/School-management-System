@@ -1,24 +1,26 @@
-const jwt = require("jsonwebtoken");
+const jwt = require('jsonwebtoken');
+const JWT_SECRET = process.env.JWT_SECRET || 'supersecret_school_jwt_key_2026';
 
-function authMiddleware(req, res, next) {
-  const authorization = req.get("authorization");
-  const token = authorization && authorization.startsWith("Bearer ")
-    ? authorization.slice(7)
-    : null;
+/**
+ * Verifies JWT token from the Authorization header (Bearer <token>)
+ */
+function authenticateToken(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
 
   if (!token) {
-    return res.status(401).json({ error: "Authentication required." });
-  }
-  if (!process.env.JWT_SECRET) {
-    return next(new Error("JWT_SECRET is not configured."));
+    return res.status(401).json({ error: 'Access denied. No authentication token provided.' });
   }
 
-  try {
-    req.user = jwt.verify(token, process.env.JWT_SECRET);
-    return next();
-  } catch (error) {
-    return res.status(401).json({ error: "Invalid or expired token." });
-  }
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) {
+      return res.status(403).json({ error: 'Invalid or expired authentication token.' });
+    }
+    req.user = user; // { id, email, role, first_name, last_name }
+    next();
+  });
 }
 
-module.exports = authMiddleware;
+module.exports = {
+  authenticateToken
+};

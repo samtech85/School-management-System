@@ -1,10 +1,22 @@
-const { body, param } = require("express-validator");
+function isValidEmail(email) {
+  if (!email) return false;
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+}
 
-const emailValidator = body("email")
-  .isEmail()
-  .withMessage("A valid email address is required.")
-  .normalizeEmail();
+function isValidPhone(phone) {
+  if (!phone) return true; // optional field
+  const phoneRegex = /^\+?[0-9\s\-\(\)]{8,20}$/;
+  return phoneRegex.test(phone);
+}
 
-const idValidator = param("id").isInt({ min: 1 }).withMessage("A valid ID is required.");
+function sanitizeString(str) {
+  if (typeof str !== 'string') return '';
+  return str.trim().replace(/[<>]/g, '');
+}
 
-module.exports = { emailValidator, idValidator };
+module.exports = {
+  isValidEmail,
+  isValidPhone,
+  sanitizeString
+};

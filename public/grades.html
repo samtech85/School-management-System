@@ -1,4 +1,48 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Grades | School Management</title><link href="/css/output.css" rel="stylesheet"></head>
-<body><header class="bg-white p-4 shadow"><a href="/dashboard.html">← Dashboard</a><button class="float-right" data-logout>Sign out</button></header><main class="mx-auto max-w-6xl p-6"><h1 class="text-2xl font-bold">Grades</h1><table class="mt-6 w-full bg-white text-left"><thead><tr><th>Student</th><th>Course</th><th>Grade</th></tr></thead><tbody data-grades><tr><td colspan="3">Loading…</td></tr></tbody></table></main><script src="/js/api.js"></script><script src="/js/formatters.js"></script><script src="/js/layout.js"></script><script src="/js/grades.js"></script></body></html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Grades Entry - School Management System</title>
+  <link rel="stylesheet" href="css/output.css">
+</head>
+<body class="bg-gray-50">
+  <div id="app" class="flex min-h-screen">
+    <div class="flex-1 p-6 space-y-6">
+      <h3 class="text-xl font-bold text-heading">Student Grades & Evaluation Entry</h3>
+
+      <!-- Class Selector -->
+      <div class="bg-white p-4 rounded-lg shadow-sm flex items-center space-x-4">
+        <label class="text-sm font-medium text-darkgray">Select Class:</label>
+        <select id="class-select" class="px-3 py-2 border rounded-lg text-sm w-72 focus:outline-none focus:ring-2 focus:ring-primary">
+          <option value="">-- Choose Class --</option>
+        </select>
+        <button id="load-grades-btn" class="bg-secondary text-white px-4 py-2 rounded-lg text-sm hover:bg-secondary-dark transition">Load Rosters & Grades</button>
+      </div>
+
+      <!-- Grades Table -->
+      <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-gray-100 text-darkgray uppercase text-xs tracking-wider border-b">
+              <th class="p-3">Student</th>
+              <th class="p-3">Component</th>
+              <th class="p-3">Score</th>
+              <th class="p-3">Max Score</th>
+              <th class="p-3 text-right">Action</th>
+            </tr>
+          </thead>
+          <tbody id="grades-table-body" class="divide-y divide-gray-200 text-sm">
+            <tr><td colspan="5" class="p-4 text-center text-gray-500">Please select a class to enter or view grades.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/formatters.js"></script>
+  <script src="js/layout.js"></script>
+  <script src="js/grades.js"></script>
+</body>
+</html>
